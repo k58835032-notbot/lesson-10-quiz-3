@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Romaji → Hiragana Quiz (Long Vowels)</title>
+
+<style>
+  body {
+    font-family: "Hiragino Kaku Gothic Pro", "Meiryo", sans-serif;
+    background:#fff;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:40px;
+    text-align:center;
+    color:#333;
+  }
+  h1 { color:#b23b3b; margin-bottom:10px; }
+  #counter { margin-bottom:20px; font-size:1.1em; }
+
+  #game-box {
+    background:#fff;
+    border-radius:15px;
+    box-shadow:0 4px 12px rgba(0,0,0,.15);
+    padding:30px;
+    width:90%;
+    max-width:500px;
+  }
+
+  #romaji { font-size:2.4em; margin:20px 0; letter-spacing:1px; }
+
+  .option {
+    display:block;
+    background:#ffeaea;
+    border:none;
+    border-radius:10px;
+    padding:12px;
+    font-size:1.3em;
+    width:100%;
+    max-width:260px;
+    margin:10px auto;
+    cursor:pointer;
+  }
+
+  .option:hover { background:#f7b6b6; }
+
+  #message { margin-top:20px; font-weight:bold; font-size:1.2em; }
+  <div id="message"></div>
+<div id="motivation"></div>
+<div id="gif-box"></div>
+
+
+  #next {
+    display:none;
+    margin-top:20px;
+    background:#b23b3b;
+    color:white;
+    border:none;
+    border-radius:10px;
+    padding:10px 20px;
+    font-size:1.1em;
+    cursor:pointer;
+  }
+
+  #gif-box { margin-top:20px; }
+  #gif-box img { max-width:220px; border-radius:12px; }
+</style>
+</head>
+
+<body>
+
+<h1>Pronunciation → Hiragana</h1>
+<div id="counter"></div>
+
+<div id="game-box">
+  <div id="romaji"></div>
+  <div id="options"></div>
+  <div id="message"></div>
+  <div id="gif-box"></div>
+  <button id="next" onclick="nextQuestion()">Next</button>
+</div>
+
+<script>
+/* ========= QUESTION POOL (50) ========= */
+const ALL_QUESTIONS = [
+
+  // ---- ゆう (yū) ----
+  { romaji:"yūgata", kana:"ゆうがた", distractors:["ゆがた","ゆうかた","ゆっがた"] },
+  { romaji:"yūmei", kana:"ゆうめい", distractors:["ゆめい","ゆうめ","ゆっめい"] },
+  { romaji:"yūbin", kana:"ゆうびん", distractors:["ゆびん","ゆうひん","ゆっびん"] },
+  { romaji:"yūjin", kana:"ゆうじん", distractors:["ゆじん","ゆうしん","ゆっじん"] },
+  { romaji:"yūenchi", kana:"ゆうえんち", distractors:["ゆえんち","ゆうえち","ゆっえんち"] },
+  { romaji:"yūkō", kana:"ゆうこう", distractors:["ゆこう","ゆうこ","ゆっこう"] },
+  { romaji:"yūki", kana:"ゆうき", distractors:["ゆき","ゆうぎ","ゆっき"] },
+  { romaji:"yūshō", kana:"ゆうしょう", distractors:["ゆしょう","ゆうしょ","ゆっしょう"] },
+  { romaji:"yūdō", kana:"ゆうどう", distractors:["ゆどう","ゆうと","ゆっどう"] },
+  { romaji:"yūyake", kana:"ゆうやけ", distractors:["ゆやけ","ゆうけ","ゆっやけ"] },
+
+  // ---- よう (yō) ----
+  { romaji:"yōfuku", kana:"ようふく", distractors:["よふく","ようふ","よっふく"] },
+  { romaji:"yōsu", kana:"ようす", distractors:["よす","ようず","よっす"] },
+  { romaji:"yōi", kana:"ようい", distractors:["よい","よう","よっい"] },
+  { romaji:"yōji", kana:"ようじ", distractors:["よじ","ようし","よっじ"] },
+  { romaji:"yōchien", kana:"ようちえん", distractors:["よちえん","ようえん","よっちえん"] },
+  { romaji:"yōki", kana:"ようき", distractors:["よき","ようぎ","よっき"] },
+  { romaji:"yōsei", kana:"ようせい", distractors:["よせい","ようせ","よっせい"] },
+  { romaji:"yōbō", kana:"ようぼう", distractors:["よぼう","ようほう","よっぼう"] },
+  { romaji:"yōshi", kana:"ようし", distractors:["よし","ようじ","よっし"] },
+  { romaji:"yōten", kana:"ようてん", distractors:["よてん","ようでん","よってん"] }
+
+];
+
+
+/* ========= GAME SETUP ========= */
+const TOTAL_PER_GAME = 25;
+
+function shuffle(arr) {
+  return arr.sort(() => Math.random() - 0.5);
+}
+
+// pick random 25 questions
+const questions = shuffle([...ALL_QUESTIONS]).slice(0, TOTAL_PER_GAME);
+
+let currentIndex = 0;
+let score = 0;
+
+/* ========= DOM ========= */
+const romajiEl = document.getElementById("romaji");
+const optionsEl = document.getElementById("options");
+const messageEl = document.getElementById("message");
+const motivationEl = document.getElementById("motivation");
+const nextBtn = document.getElementById("next");
+const counterEl = document.getElementById("counter");
+const gifBox = document.getElementById("gif-box");
+
+/* ========= GAME LOGIC ========= */
+function showQuestion() {
+  const q = questions[currentIndex];
+
+  counterEl.textContent = `Question ${currentIndex + 1} / ${questions.length}`;
+  romajiEl.textContent = q.romaji;
+  messageEl.textContent = "";
+  nextBtn.style.display = "none";
+  gifBox.innerHTML = "";
+
+  const options = shuffle([q.kana, ...q.distractors]);
+  optionsEl.innerHTML = "";
+
+  options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "option";
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(opt);
+    optionsEl.appendChild(btn);
+  });
+}
+
+function checkAnswer(choice) {
+  const correct = questions[currentIndex].kana;
+
+  if (choice === correct) {
+    messageEl.textContent = "✅ Correct!";
+    messageEl.style.color = "#2e7d32";
+    score++;
+  } else {
+    messageEl.textContent = `❌ Correct answer: ${correct}`;
+    messageEl.style.color = "#b23b3b";
+  }
+
+  nextBtn.style.display = "inline-block";
+  document.querySelectorAll(".option").forEach(b => b.disabled = true);
+}
+
+function nextQuestion() {
+  currentIndex++;
+  currentIndex < questions.length ? showQuestion() : finishGame();
+}
+
+function finishGame() {
+  romajiEl.textContent = "🎉 Finished!";
+  counterEl.textContent = "";
+  optionsEl.innerHTML = "";
+
+ let motivationText = "";
+  let gif = "";
+
+  if (score >= 21) {
+    motivationText = "🌟 Well done! You are spelling & pronunciation master!";
+    gif = "https://raw.githubusercontent.com/k58835032-notbot/lesson-9-morae/main/cool%20cute%20cat.gif";
+  } else if (score >= 12) {
+    motivationText = "👍 You're getting there! Keep practicing!";
+    gif = "https://raw.githubusercontent.com/k58835032-notbot/lesson-9-morae/main/cute%20cat%20walking.gif";
+  } else {
+    motivationText = "🌱 Keep practicing — every try matters!";
+    gif = "https://raw.githubusercontent.com/k58835032-notbot/lesson-9-morae/main/sad%20cute%20cat.gif";
+  }
+
+  messageEl.innerHTML = `Score: ${score} / ${questions.length}`;
+  motivationEl.textContent = motivationText;
+  gifBox.innerHTML = `<img src="${gif}" alt="cat gif">`;
+}
+
+showQuestion();
+</script>
+
+</body>
+</html>
